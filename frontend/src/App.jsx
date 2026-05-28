@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
+import api from "./api/api";
 import "./App.css";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
 
 const STAGES = [
   { key: "todo", label: "Todo" },
@@ -27,22 +25,22 @@ const emptyTaskForm = {
 };
 
 async function apiRequest(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
+  try {
+    const response = await api({
+      url: path,
+      method: options.method || "GET",
+      data: options.body ? JSON.parse(options.body) : options.data,
+      params: options.params,
+      headers: options.headers,
+    });
 
-  const result = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(result.message || "Something went wrong");
+    return response.data?.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message || error.message || "Something went wrong",
+      { cause: error },
+    );
   }
-
-  return result.data;
 }
 
 function AuthScreen({ onAuthenticated }) {

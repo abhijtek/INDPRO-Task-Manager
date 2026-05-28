@@ -124,13 +124,13 @@ Optional frontend environment variable:
 Create `frontend/.env` only if your backend is not running on the default URL.
 
 ```env
-VITE_API_BASE_URL=http://localhost:3000/api/v1
+VITE_BACKEND_BASE_URL=http://localhost:3000
 ```
 
 If this variable is not provided, the frontend uses:
 
 ```txt
-http://localhost:3000/api/v1
+http://localhost:3000
 ```
 
 ## Running the App
@@ -245,7 +245,7 @@ When deploying:
 
 - Set all backend environment variables on the hosting platform.
 - Set `CORS_ORIGIN` to the deployed frontend URL.
-- Set `VITE_API_BASE_URL` in the frontend deployment to the deployed backend API URL.
+- Set `VITE_BACKEND_BASE_URL` in the frontend deployment to the deployed backend URL.
 - Use a production MongoDB Atlas URI for `MONGO_URI`.
 
 ## Author
