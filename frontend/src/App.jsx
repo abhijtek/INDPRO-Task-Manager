@@ -134,7 +134,8 @@ function AuthScreen({ onAuthenticated }) {
             <p className="mt-2 text-sm text-slate-500">
               {isLogin ? "New here?" : "Already registered?"}{" "}
               <button
-                className="font-semibold text-emerald-700 hover:text-emerald-800"
+                className="font-semibold text-emerald-700 transition active:scale-95 disabled:cursor-not-allowed disabled:text-slate-400 hover:text-emerald-800"
+                disabled={isSubmitting}
                 onClick={switchMode}
                 type="button"
               >
@@ -175,7 +176,7 @@ function AuthScreen({ onAuthenticated }) {
               value={form.password}
             />
             <button
-              className="w-full rounded-lg bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+              className="w-full rounded-lg bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition active:scale-[0.99] hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:active:scale-100"
               disabled={isSubmitting}
               type="submit"
             >
@@ -307,7 +308,7 @@ function TaskForm({ editingTask, onCancel, onSaved }) {
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
         <button
-          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
+          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition active:scale-95 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300 disabled:active:scale-100"
           disabled={isSaving}
           type="submit"
         >
@@ -315,7 +316,8 @@ function TaskForm({ editingTask, onCancel, onSaved }) {
         </button>
         {editingTask && (
           <button
-            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition active:scale-95 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400 disabled:active:scale-100"
+            disabled={isSaving}
             onClick={onCancel}
             type="button"
           >
@@ -352,6 +354,8 @@ function TaskBoard({ user, onLogout }) {
   const [tasks, setTasks] = useState([]);
   const [editingTask, setEditingTask] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [deletingTaskId, setDeletingTaskId] = useState("");
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const groupedTasks = useMemo(() => {
     return STAGES.reduce((grouped, stage) => {
@@ -403,22 +407,30 @@ function TaskBoard({ user, onLogout }) {
   }, []);
 
   const handleDelete = async (taskId) => {
+    if (deletingTaskId) return;
+
+    setDeletingTaskId(taskId);
     try {
       await apiRequest(`/tasks/${taskId}`, { method: "DELETE" });
       toast.success("Task deleted");
-      fetchTasks();
+      await fetchTasks(false);
     } catch (error) {
       toast.error(error.message);
+    } finally {
+      setDeletingTaskId("");
     }
   };
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
       await apiRequest("/auth/logout", { method: "POST" });
       toast.success("Signed out");
       onLogout();
     } catch (error) {
       toast.error(error.message);
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -439,11 +451,12 @@ function TaskBoard({ user, onLogout }) {
               {user?.fullName || user?.username || user?.email}
             </div>
             <button
-              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition active:scale-95 hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:active:scale-100"
+              disabled={isLoggingOut}
               onClick={handleLogout}
               type="button"
             >
-              Logout
+              {isLoggingOut ? "Logging out..." : "Logout"}
             </button>
           </div>
         </div>
@@ -484,6 +497,8 @@ function TaskBoard({ user, onLogout }) {
                     groupedTasks[stage.key].map((task) => (
                       <TaskCard
                         key={task._id}
+                        isDeleting={deletingTaskId === task._id}
+                        isDisabled={Boolean(deletingTaskId)}
                         onDelete={() => handleDelete(task._id)}
                         onEdit={() => setEditingTask(task)}
                         task={task}
@@ -504,7 +519,7 @@ function TaskBoard({ user, onLogout }) {
   );
 }
 
-function TaskCard({ onDelete, onEdit, task }) {
+function TaskCard({ isDeleting, isDisabled, onDelete, onEdit, task }) {
   const priorityClass = {
     low: "bg-sky-50 text-sky-700",
     medium: "bg-amber-50 text-amber-700",
@@ -535,18 +550,20 @@ function TaskCard({ onDelete, onEdit, task }) {
       )}
       <div className="mt-4 flex gap-2">
         <button
-          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition active:scale-95 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400 disabled:active:scale-100"
+          disabled={isDisabled}
           onClick={onEdit}
           type="button"
         >
           Edit
         </button>
         <button
-          className="rounded-lg border border-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50"
+          className="rounded-lg border border-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-600 transition active:scale-95 hover:bg-rose-50 disabled:cursor-not-allowed disabled:bg-rose-50 disabled:text-rose-300 disabled:active:scale-100"
+          disabled={isDisabled}
           onClick={onDelete}
           type="button"
         >
-          Delete
+          {isDeleting ? "Deleting..." : "Delete"}
         </button>
       </div>
     </article>
